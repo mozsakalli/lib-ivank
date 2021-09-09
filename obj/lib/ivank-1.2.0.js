@@ -1,3 +1,683 @@
+window._requestAF = (function() {
+  return window.requestAnimationFrame ||
+	 window.webkitRequestAnimationFrame ||
+	 window.mozRequestAnimationFrame ||
+	 window.oRequestAnimationFrame ||
+	 window.msRequestAnimationFrame ||
+	 function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+	   window.setTimeout(callback, 1000/60);
+	 };
+})();
+
+
+	//package net.ivank.geom;
+
+	/**
+	 * A class for representing a 2D point
+	 * @author Ivan Kuckir
+	 */
+	 
+	/**
+	 * @constructor
+	 */	
+	function Point(x, y)
+	{		
+		if(!x) x=0; if(!y) y=0;
+		this.x = x;
+		this.y = y;
+	}
+	
+	Point.prototype.add   = function(p)
+	{
+		return new Point(this.x+p.x, this.y+p.y);
+	}
+
+	Point.prototype.clone = function()
+	{
+		return new Point(this.x, this.y);
+	}
+	
+	Point.prototype.copyFrom = function(p)
+	{
+		this.x = p.x; this.y = p.y;
+	}
+	
+	Point.prototype.equals = function(p)
+	{
+		return (this.x == p.x && this.y == p.y);
+	}
+	
+	Point.prototype.normalize = function(len)
+	{
+		var l = Math.sqrt(this.x*this.x + this.y*this.y)
+		this.x *= len/l;
+		this.y *= len/l;
+	}
+	
+	Point.prototype.offset = function(x,y)
+	{
+		this.x += x;  this.y += y;
+	}
+	
+	Point.prototype.setTo = function(xa, ya)
+	{
+		this.x = xa; this.y = ya;
+	}
+	
+	Point.prototype.subtract = function(p)
+	{
+		return new Point(this.x-p.x, this.y-p.y);
+	}
+
+	
+	Point.distance = function(a, b)
+	{
+		return Point._distance(a.x, a.y, b.x, b.y);
+	}
+	
+	Point.interpolate = function(a, b, f)
+	{
+		return new Point(a.x + f*(b.x-a.x), a.y + f*(b.y-a.y));
+	}
+	
+	Point.polar = function(len, ang)
+	{
+		return new Point(len * Math.cos(ang), len * Math.sin(ang));
+	}
+	
+	Point._distance = function(x1, y1, x2, y2)
+	{
+		return Math.sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) );
+	}
+
+Point._v4 = {};
+Point._m4 = {};
+
+Point._v4.create = function() {
+    var out = new Float32Array(4);
+    return out;
+};
+
+Point._m4.create = function (mat) {
+	var d = new Float32Array(16);
+	d[0] = d[5] = d[10] = d[15] = 1.0;
+	if (mat) Point._m4.set(mat, d);
+	return d;
+};
+
+
+Point._v4.add = function(a, b, out) {
+    out[0] = a[0] + b[0];
+    out[1] = a[1] + b[1];
+    out[2] = a[2] + b[2];
+    out[3] = a[3] + b[3];
+};
+
+Point._v4.set = function(a, out) {
+    out[0] = a[0];
+    out[1] = a[1];
+    out[2] = a[2];
+    out[3] = a[3];
+};
+
+Point._m4.set = function (m, d) {
+	d[0 ] = m[0 ];	d[1 ] = m[1 ];  d[2 ] = m[2 ];	d[3 ] = m[3 ];
+	d[4 ] = m[4 ];	d[5 ] = m[5 ];  d[6 ] = m[6 ];	d[7 ] = m[7 ];
+	d[8 ] = m[8 ];	d[9 ] = m[9 ];  d[10] = m[10];  d[11] = m[11];
+	d[12] = m[12];  d[13] = m[13];  d[14] = m[14];  d[15] = m[15];
+};
+
+Point._m4.multiply = function (a, b, out) {
+
+	var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
+        a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
+        a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
+        a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+
+    // Cache only the current line of the second matrix
+    var b0  = b[0], b1 = b[1], b2 = b[2], b3 = b[3];  
+    out[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+    out[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+    out[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+    out[3] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+    b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7];
+    out[4] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+    out[5] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+    out[6] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+    out[7] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+    b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11];
+    out[8] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+    out[9] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+    out[10] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+    out[11] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+    b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15];
+    out[12] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+    out[13] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+    out[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+    out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+    return out;
+};
+
+Point._m4.inverse = function(a, out) {
+     var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
+        a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
+        a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
+        a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15],
+
+        b00 = a00 * a11 - a01 * a10,
+        b01 = a00 * a12 - a02 * a10,
+        b02 = a00 * a13 - a03 * a10,
+        b03 = a01 * a12 - a02 * a11,
+        b04 = a01 * a13 - a03 * a11,
+        b05 = a02 * a13 - a03 * a12,
+        b06 = a20 * a31 - a21 * a30,
+        b07 = a20 * a32 - a22 * a30,
+        b08 = a20 * a33 - a23 * a30,
+        b09 = a21 * a32 - a22 * a31,
+        b10 = a21 * a33 - a23 * a31,
+        b11 = a22 * a33 - a23 * a32,
+
+        // Calculate the determinant
+        det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+
+    if (!det) { 
+        return null; 
+    }
+    det = 1.0 / det;
+
+    out[0]  = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+    out[1]  = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+    out[2]  = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+    out[3]  = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+    out[4]  = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+    out[5]  = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+    out[6]  = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+    out[7]  = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+    out[8]  = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+    out[9]  = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+    out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+    out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+    out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+    out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+    out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+    out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+
+    return out;
+};
+
+Point._m4.multiplyVec2 = function(m, vec, dest) {
+    var x = vec[0], y = vec[1];
+    dest[0] = x * m[0] + y * m[4] + m[12];
+    dest[1] = x * m[1] + y * m[5] + m[13];
+}
+
+Point._m4.multiplyVec4 = function(m, v, out) {
+	var v0 = v[0], v1 = v[1], v2 = v[2], v3 = v[3];
+    
+	out[0] = m[0]*v0 + m[4]*v1 + m[8 ]*v2 + m[12]*v3;
+	out[1] = m[1]*v0 + m[5]*v1 + m[9 ]*v2 + m[13]*v3;
+	out[2] = m[2]*v0 + m[6]*v1 + m[10]*v2 + m[14]*v3;
+	out[3] = m[3]*v0 + m[7]*v1 + m[11]*v2 + m[15]*v3;
+}
+	//package net.ivank.geom;
+
+	/**
+	 * A basic class for representing an axis-aligned rectangle
+	 * @author Ivan Kuckir
+	 *
+	 */
+	 
+	/**
+	 * @constructor
+	 */	
+	function Rectangle(x, y, w, h)
+	{	
+		if(!x) x = 0;
+		if(!y) y = 0;
+		if(!w) w = 0;
+		if(!h) h = 0;
+		this.x = x;
+		this.y = y;
+		this.width = w;
+		this.height = h;		
+	}
+		
+	Rectangle.prototype.clone = function()
+	{
+		return new Rectangle(this.x, this.y, this.width, this.height);
+	}
+		
+	Rectangle.prototype.contains = function(x, y)
+	{
+		return (x >= this.x && x <= this.x+this.width) && (y >= this.y && y <= this.y+this.height);
+	}
+	
+	Rectangle.prototype.containsPoint = function(p)
+	{
+		return this.contains(p.x, p.y);
+	}
+	
+	Rectangle.prototype.containsRect = function(r)
+	{
+		return (this.x<=r.x && this.y<=r.y && r.x+r.width<=this.x+this.width && r.y+r.height<=this.y+this.height);
+	}
+	
+	Rectangle.prototype.copyFrom = function(r)
+	{
+		this.x = r.x; this.y = r.y; this.width = r.width; this.height = r.height;
+	}
+	
+	Rectangle.prototype.equals = function(r)
+	{
+		return(this.x==r.x && this.y==r.y && this.width==r.width && this.height == r.height);
+	}
+	
+	Rectangle.prototype.inflate = function(dx, dy)
+	{
+		this.x -= dx;
+		this.y -= dy;
+		this.width  += 2*dx;
+		this.height += 2*dy;
+	}
+	
+	Rectangle.prototype.inflatePoint = function(p)
+	{
+		this.inflate(p.x, p.y);
+	}
+	
+	Rectangle.prototype.intersection = function(rec)	// : Boolean
+	{
+		var l = Math.max(this.x, rec.x);
+		var u = Math.max(this.y, rec.y);
+		var r = Math.min(this.x+this.width , rec.x+rec.width );
+		var d = Math.min(this.y+this.height, rec.y+rec.height);
+		if(r<l || d<u) return new Rectangle();
+		else return new Rectangle(l, u, r-l, d-u);
+	}
+	
+	Rectangle.prototype.intersects = function(r)	// : Boolean
+	{
+		if(r.y+r.height<this.y || r.x>this.x+this.width || r.y>this.y+this.height || r.x+r.width<this.x) return false;
+		return true;
+	}
+	
+	Rectangle.prototype.isEmpty = function()	
+	{
+		return (this.width<=0 || this.height <= 0);
+	}
+	
+	Rectangle.prototype.offset = function(dx, dy)	
+	{
+		this.x += dx; this.y += dy;
+	}
+	
+	Rectangle.prototype.offsetPoint = function(p)	
+	{
+		this.offset(p.x, p.y)
+	}
+	
+	Rectangle.prototype.setEmpty = function()	
+	{
+		this.x = this.y = this.width = this.height = 0;
+	}
+	
+	Rectangle.prototype.setTo = function(x, y, w, h)	
+	{
+		this.x = x; this.y = y; this.width = w; this.height = h;
+	}
+		
+	Rectangle.prototype.union = function(r)	// : Rectangle
+	{
+		if(this.isEmpty()) return r.clone();
+		if(r.isEmpty()) return this.clone();
+		var nr = this.clone();
+		nr._unionWith(r);
+		return nr;
+	}
+
+	
+	Rectangle._temp = new Float32Array(2);
+	
+	Rectangle.prototype._unionWith = function(r) // : void
+	{
+		if(r.isEmpty()) return;
+		if(this.isEmpty()) { this.copyFrom(r); return; }
+		this._unionWP(r.x, r.y);
+		this._unionWP(r.x+r.width, r.y+r.height);
+	}
+	
+	Rectangle.prototype._unionWP = function(x, y)	// union with point
+	{
+		var minx = Math.min(this.x, x);
+		var miny = Math.min(this.y, y);
+		this.width  = Math.max(this.x + this.width , x) - minx;
+		this.height = Math.max(this.y + this.height, y) - miny;
+		this.x = minx; this.y = miny;
+	}
+	
+	Rectangle.prototype._unionWL = function(x0,y0,x1,y1)	// union with point
+	{
+		if(this.width==0 && this.height==0) this._setP(x0,y0);
+		else  this._unionWP(x0,y0);
+		this._unionWP(x1,y1);
+	}
+	
+	
+	Rectangle.prototype._setP = function(x, y)
+	{
+		this.x = x; this.y = y;
+		this.width = this.height = 0;
+	}	//package net.ivank.geom;
+
+	/**
+	 * A class for representing a 2D point
+	 * @author Ivan Kuckir
+	 */
+	function Transform()
+	{	
+		this._obj		= null;
+		
+		this._mdirty		= false;		// matrix dirty
+		this._vdirty		= false;		// values dirty
+		
+		this._tmat		= Point._m4.create();
+		this._imat		= Point._m4.create();
+		this._atmat		= Point._m4.create();
+		this._aimat		= Point._m4.create();
+		this._pscal		= Point._m4.create();
+		
+		this._cmat		= Point._m4.create();
+		this._cvec		= Point._v4.create();
+		this._cID		= true;
+		
+		this._scaleX		= 1;
+		this._scaleY		= 1;
+		this._scaleZ		= 1;
+		this._rotationX		= 0;
+		this._rotationY		= 0;
+		this._rotationZ		= 0;
+	}
+	
+	Transform.prototype._getTMat = function()
+	{
+		var o = this._obj;
+		var m = this._tmat;
+		this._checkMat();
+		m[12] = o.x;  m[13] = o.y;  m[14] = o.z;
+		return m;
+	}
+
+	Transform.prototype._getIMat = function()
+	{
+		Point._m4.inverse(this._getTMat(), this._imat); 
+		return this._imat;
+	}
+	
+	Transform.prototype._postScale = function(sx, sy)
+	{
+		this._checkMat();
+		var ps = this._pscal;
+		ps[10] = ps[15] = 1;
+		ps[0] = sx;  ps[5] = sy;
+		Point._m4.multiply(ps, this._tmat, this._tmat);
+		this._vdirty = true;
+	}
+
+	Transform.prototype._valsToMat = function()
+	{
+		var m = this._tmat;
+		
+		var sx = this._scaleX;
+		var sy = this._scaleY;
+		var sz = this._scaleZ;
+			
+		var r = -0.01745329252;
+		var a =  this._rotationX*r;	// alpha
+		var b =  this._rotationY*r;	// beta
+		var g =  this._rotationZ*r;	// gama
+		
+		var ca = Math.cos(a), cb = Math.cos(b), cg = Math.cos(g);
+		var sa = Math.sin(a), sb = Math.sin(b), sg = Math.sin(g);
+			
+		m[0] = cb*cg*sx;			m[1] = -cb*sg*sx;				m[2 ] = sb*sx;
+		m[4] = (ca*sg+sa*sb*cg)*sy;	m[5] = (ca*cg-sa*sb*sg)*sy;		m[6 ] = -sa*cb*sy;
+		m[8] = (sa*sg-ca*sb*cg)*sz;	m[9] = (sa*cg+ca*sb*sg)*sz;		m[10] = ca*cb*sz;
+	}
+	
+	Transform.prototype._matToVals = function()
+	{
+		var a = this._tmat;
+		
+		var a00 = a[0], a01 = a[1], a02 = a[2 ], 
+			a10 = a[4], a11 = a[5], a12 = a[6 ],
+			a20 = a[8], a21 = a[9], a22 = a[10];
+		
+		this._scaleX = Math.sqrt(a00*a00 + a01*a01 + a02*a02);
+		this._scaleY = Math.sqrt(a10*a10 + a11*a11 + a12*a12);
+		this._scaleZ = Math.sqrt(a20*a20 + a21*a21 + a22*a22);
+		var isX = 1/this._scaleX, isY = 1/this._scaleY, isZ = 1/this._scaleZ;
+		
+		a00 *= isX;  a01 *= isX;  a02 *= isX;
+		a10 *= isY;  a11 *= isY;  a12 *= isY;
+		a20 *= isZ;  a21 *= isZ;  a22 *= isZ;
+		
+		var r = -57.29577951308;
+		this._rotationX = r*Math.atan2(-a12, a22);
+		this._rotationY = r*Math.atan2(a02, Math.sqrt(a12*a12 + a22*a22));
+		this._rotationZ = r*Math.atan2(-a01, a00);
+	}
+	
+	Transform.prototype._checkVals = function() { if(this._vdirty) {this._matToVals(); this._vdirty = false;} }
+	Transform.prototype._checkMat  = function() { if(this._mdirty) {this._valsToMat(); this._mdirty = false;} }
+	
+	Transform.prototype._setOPos = function(m)
+	{
+		var m = this._tmat;
+		this._obj.x = m[12];  this._obj.y = m[13];  this._obj.z = m[14];
+	}
+	
+	Transform.prototype._checkColorID = function()
+	{
+		var m = this._cmat;
+		var v = this._cvec;
+		this._cID = m[15] == 1 &&
+					m[0 ]==1 && m[1 ]==0 && m[2 ]==0 && m[3 ]==0 &&
+					m[4 ]==0 && m[5 ]==1 && m[6 ]==0 && m[7 ]==0 && 
+					m[8 ]==0 && m[9 ]==0 && m[10]==1 && m[11]==0 && 
+					m[12]==0 && m[13]==0 && m[14]==0 && m[15]==1 && 
+					v[0 ]==0 && v[1 ]==0 && v[2 ]==0 && v[3 ]==0 ;  
+	}
+	
+	Transform.prototype._setMat3 = function(m3){ var m4 = this._tmat; m4[0]=m3[0]; m4[1]=m3[1]; m4[4]=m3[3]; m4[5]=m3[4]; m4[12]=m3[6]; m4[13]=m3[7]; }
+	Transform.prototype._getMat3 = function(m3){ var m4 = this._tmat; m3[0]=m4[0]; m3[1]=m4[1]; m3[3]=m4[4]; m3[4]=m4[5]; m3[6]=m4[12]; m3[7]=m4[13]; }
+	
+	Transform.prototype._setCMat5 = function(m5){ var m4 = this._cmat, v4 = this._cvec;           for(var i=0; i<4; i++) { v4[i]=m5[20+i];  for(var j=0; j<4; j++) m4[4*i+j]=m5[5*i+j]; } }
+	Transform.prototype._getCMat5 = function(m5){ var m4 = this._cmat, v4 = this._cvec; m5[24]=1; for(var i=0; i<4; i++) { m5[20+i]=v4[i];  for(var j=0; j<4; j++) m5[5*i+j]=m4[4*i+j]; } }
+	
+	
+	Transform.prototype.__defineSetter__("matrix",   function(m){ this._checkMat(); this._setMat3(m); this._setOPos(); this._vdirty = true; });
+	Transform.prototype.__defineGetter__("matrix",   function( ){ this._checkMat(); var m = new Float32Array(9); this._getMat3(m); return m; });
+	
+	Transform.prototype.__defineSetter__("matrix3D", function(m){ this._checkMat(); Point._m4.set(m, this._tmat); this._setOPos(); this._vdirty = true; });
+	Transform.prototype.__defineGetter__("matrix3D", function( ){ this._checkMat(); return Point._m4.create(this._getTMat()); });
+	
+	Transform.prototype.__defineSetter__("colorTransform", function(m){ this._setCMat5(m); this._checkColorID(); });
+	Transform.prototype.__defineGetter__("colorTransform", function( ){ var m = new Float32Array(25); this._getCMat5(m); return m; });
+	
+	
+function EventDispatcher()
+{
+	this.lsrs = {};		// hash table for listeners ... Key (Event type) : Array of functions
+	this.cals = {};		// hash table for objects   ... Key (Event type) : Array of Objects, on which function should be called
+}
+
+EventDispatcher.efbc = [];	// objects, on which EnterFrame will be broadcasted
+
+EventDispatcher.prototype.hasEventListener = function(type)
+{
+	var fs = this.lsrs[type];		// functions for this event
+	if (fs == null) return false;
+	return (fs.length > 0);
+}
+
+EventDispatcher.prototype.addEventListener = function(type, f)
+{
+	this.addEventListener2(type, f, null);
+}
+
+EventDispatcher.prototype.addEventListener2 = function(type, f, o)	// string, function
+{
+	if(this.lsrs[type] == null)
+	{
+		this.lsrs[type] = [];
+		this.cals[type] = [];
+	}
+	this.lsrs[type].push(f);
+	this.cals[type].push(o);
+	
+	if(type == Event.ENTER_FRAME)
+	{
+		var arEF = EventDispatcher.efbc;
+		if(arEF.indexOf(this) < 0) arEF.push(this);
+	}
+}
+
+EventDispatcher.prototype.removeEventListener = function(type, f)	// string, function
+{
+	var fs = this.lsrs[type];		// functions for this event
+	if (fs == null) return;
+	var ind = fs.indexOf(f);
+	if(ind < 0) return;
+	var cs = this.cals[type];
+	fs.splice(ind, 1);
+	cs.splice(ind, 1);
+	
+	if(type == Event.ENTER_FRAME && fs.length == 0)
+	{
+		var arEF = EventDispatcher.efbc;
+		arEF.splice(arEF.indexOf(this), 1);
+	}
+}
+
+EventDispatcher.prototype.dispatchEvent = function(e)	// Event
+{
+	e.currentTarget = this;
+	if(e.target == null) e.target = this;
+	
+	var fs = this.lsrs[e.type];
+	if (fs == null) return;
+	var cs = this.cals[e.type];
+	for (var i=0; i<fs.length; i++) 
+	{
+		if(cs[i] == null) fs[i](e);
+		else fs[i].call(cs[i], e);
+	}
+}
+
+function Event(type, bubbles)
+{
+	if(!bubbles) bubbles= false;
+	this.type			= type;
+	this.target			= null;
+	this.currentTarget	= null;
+	this.bubbles		= bubbles;
+}
+
+Event.ENTER_FRAME			= "enterFrame";
+Event.RESIZE				= "resize";
+Event.ADDED_TO_STAGE 		= "addedToStage";
+Event.REMOVED_FROM_STAGE 	= "removedFromStage";
+
+Event.CHANGE				= "change";
+
+Event.OPEN					= "open";
+Event.PROGRESS				= "progress";
+Event.COMPLETE				= "complete";//	package net.ivank.events;
+
+function MouseEvent(type, bubbles)
+{
+	Event.call(this, type, bubbles);
+	
+	this.movementX = 0;
+	this.movementY = 0;
+}
+MouseEvent.prototype = new Event();
+
+
+MouseEvent.CLICK		= "click";
+MouseEvent.MOUSE_DOWN	= "mouseDown";
+MouseEvent.MOUSE_UP		= "mouseUp";
+
+MouseEvent.MIDDLE_CLICK	= "middleClick";
+MouseEvent.MIDDLE_MOUSE_DOWN	= "middleMouseDown";
+MouseEvent.MIDDLE_MOUSE_UP		= "middleMouseUp";
+
+MouseEvent.RIGHT_CLICK	= "rightClick";
+MouseEvent.RIGHT_MOUSE_DOWN	= "rightMouseDown";
+MouseEvent.RIGHT_MOUSE_UP	= "rightMouseUp";
+
+MouseEvent.MOUSE_MOVE	= "mouseMove";
+MouseEvent.MOUSE_OVER	= "mouseOver";
+MouseEvent.MOUSE_OUT	= "mouseOut";//	package net.ivank.events;
+
+function TouchEvent(type, bubbles)
+{
+	Event.call(this, type, bubbles);
+	
+	this.stageX = 0;
+	this.stageY = 0;
+	this.touchPointID = -1;
+}
+TouchEvent.prototype = new Event();
+
+TouchEvent.prototype._setFromDom = function(t)
+{
+	var dpr = window.devicePixelRatio || 1;
+	this.stageX = t.clientX*dpr;
+	this.stageY = t.clientY*dpr;
+	this.touchPointID = t.identifier;
+}
+
+TouchEvent.TOUCH_BEGIN  = "touchBegin";
+TouchEvent.TOUCH_END    = "touchEnd";
+TouchEvent.TOUCH_MOVE   = "touchMove";
+TouchEvent.TOUCH_OUT    = "touchOut";
+TouchEvent.TOUCH_OVER   = "touchOver";
+//TouchEvent.TOUCH_ROLL_OUT = "touchRollOut";
+//TouchEvent.TOUCH_ROLL_OVER = "touchRollOver";
+TouchEvent.TOUCH_TAP = "touchTap";
+//	package net.ivank.display;
+
+
+function KeyboardEvent(type, bubbles)
+{
+	Event.call(this, type, bubbles);
+	
+	this.altKey = false;
+	this.ctrlKey = false;
+	this.shiftKey = false;
+	
+	this.keyCode = 0;
+	this.charCode = 0;
+}
+KeyboardEvent.prototype = new Event();
+
+KeyboardEvent.prototype._setFromDom = function(e)
+{
+	//console.log(e);
+	this.altKey		= e.altKey;
+	this.ctrlKey	= e.ctrlKey;
+	this.shiftKey	= e.shiftKey;
+
+	this.keyCode	= e.keyCode;
+	this.charCode	= e.charCode;
+}
+
+KeyboardEvent.KEY_DOWN	= "keyDown";
+KeyboardEvent.KEY_UP	= "keyUp";
 
 
 	var BlendMode = 
@@ -2386,3 +3066,571 @@ BitmapData._nhpot = function(x) {
 		if(this.graphics._hits(tp.x, tp.y)) return true;
 		return DisplayObjectContainer.prototype._htpLocal.call(this, org, p);
 	}
+	var TextFormatAlign = 
+	{
+		LEFT	: "left",
+		CENTER	: "center",
+		RIGHT	: "right",
+		JUSTIFY	: "justify"
+	}
+			/**
+		 * A constructor of text format
+		 * @param f		URL of font
+		 * @param s		size of text
+		 * @param c		color of text
+		 */
+		 
+	function TextFormat(f, s, c, b, i, a, l)
+	{
+		/* public */
+		this.font	= f?f:"Times New Roman";
+		this.size	= s?s:12;
+		this.color	= c?c:0x000000;
+		this.bold	= b?b:false;
+		this.italic	= i?i:false;
+		this.align	= a?a:TextFormatAlign.LEFT;
+		this.leading= l?l:0;
+		
+		this.maxW = 0;
+		this.data = {image:null, tw:0, th:0, rw:0, rh:0};	// image, text width/height, real width/height
+	}
+	
+	TextFormat.prototype.clone = function()
+	{
+		return (new TextFormat(this.font, this.size, this.color, this.bold, this.italic, this.align, this.leading));
+	}
+	
+	TextFormat.prototype.set = function(tf)
+	{
+		this.font = tf.font;
+		this.size = tf.size;
+		this.color = tf.color;
+		this.bold = tf.bold;
+		this.italic = tf.italic;
+		this.align = tf.align;
+		this.leading = tf.leading;
+	}
+	
+	/*
+		metrics = 	// for each line
+		[
+			{	
+				x, y, width, height,
+				charOffset  // int
+				words =  // for each word
+				[
+					{
+						x, y, width, height
+						word // String
+					}
+					, ...
+				]
+			}
+			, ...
+		]
+	*/
+	TextFormat.prototype.setContext = function(ctx)
+	{
+		var c = this.color;
+		var r = (c>>16 & 0x0000ff);
+		var g = (c>>8 & 0x0000ff);
+		var b = (c & 0x0000ff);
+		
+		ctx.textBaseline = "top";
+		ctx.fillStyle = ctx.strokeStyle = "rgb("+r+","+g+","+b+")";
+		ctx.font = (this.italic?"italic ":"")+(this.bold?"bold ":"")+this.size+"px "+this.font;
+	}
+	
+	TextFormat.prototype.getImageData = function(s, tf)	// string, TextField - read only
+	{
+		var canv = TextFormat._canvas;
+		var ctx = TextFormat._ctxext;
+		var data = this.data;
+		
+		canv.width	= data.rw = this._nhpt(tf._areaW); //console.log(tf._areaW, canv.width);
+		canv.height	= data.rh = this._nhpt(tf._areaH); //console.log(tf._areaH, canv.height);
+	
+		if(tf._background)
+		{
+			//console.log("has background");
+			ctx.fillStyle="rgba(255,255,255,1)";
+			ctx.fillRect(0,0,tf._areaW,tf._areaH);
+		}
+		if(tf._border)
+		{
+			ctx.strokeStyle = "rgb(0,0,0)";
+			ctx.beginPath();
+			//ctx.moveTo(Math.round(b0.x)+0.5, b0.y);
+			//ctx.lineTo(Math.round(b0.x)+0.5, b0.y+b0.height);
+			
+			ctx.rect(0.5,0.5,tf._areaW-1,tf._areaH-1);
+			ctx.stroke();
+		}
+		
+		
+		this.setContext(ctx);
+	
+		var metrics = [];
+		this.maxW = 0;
+		var pars = s.split("\n");
+		var line = 0;
+		var posY = 0;
+		var lineH = this.size * 1.25;
+		var coff = 0;	// character offset
+		for(var i=0; i<pars.length; i++)
+		{
+			var lc = this.renderPar(pars[i], posY, lineH, ctx, tf, coff, metrics);
+			line += lc;
+			posY += lc *(lineH +this.leading);
+			coff += pars[i].length + 1;
+		}
+		if(this.align == TextFormatAlign.JUSTIFY) this.maxW = Math.max(this.maxW, tf._areaW);
+		
+		data.tw = this.maxW;
+		data.th = (lineH+this.leading)*line - this.leading;
+		tf._metrics = metrics;
+		
+		if(tf._selectable && tf._select && tf._select.from < tf._select.to)
+		{
+			var sel = tf._select;
+			var m = metrics;
+			var l0 = tf.getLineIndexOfChar(sel.from);
+			var l1 = tf.getLineIndexOfChar(sel.to-1);
+			var b0 = tf.getCharBoundaries(sel.from);
+			var b1 = tf.getCharBoundaries(sel.to-1);
+			ctx.fillStyle="rgba(0,0,0,0.25)";
+			if(l0 == l1) { ctx.fillRect(b0.x, b0.y, b1.x+b1.width-b0.x, b1.y+b1.height-b0.y); }
+			else
+			{
+				ctx.fillRect(b0.x, b0.y, m[l0].x+m[l0].width-b0.x, m[l0].y+m[l0].height-b0.y);
+				for(var l=l0+1; l<l1; l++) ctx.fillRect(m[l].x, m[l].y, m[l].width, m[l].height);
+				ctx.fillRect(m[l1].x, m[l1].y, b1.x+b1.width-m[l1].x, b1.y+b1.height-m[l1].y);
+			}
+		}
+		else if(tf._type=="input" && tf._curPos>-1)
+		{
+			var b0 = tf.getCharBoundaries(tf._curPos);
+			ctx.beginPath();
+			ctx.moveTo(Math.round(b0.x)+0.5, b0.y);
+			ctx.lineTo(Math.round(b0.x)+0.5, b0.y+b0.height);
+			ctx.stroke();
+		}
+		
+		data.canvas = canv;
+		var imgd = ctx.getImageData(0,0,data.rw,data.rh);
+		
+		
+		if(window.CanvasPixelArray && imgd.data instanceof CanvasPixelArray)	// old standard, implemented in IE11
+		{
+			data.ui8buff = new Uint8Array(imgd.data);
+		}
+		else data.ui8buff = new Uint8Array(imgd.data.buffer);
+		
+		//var ui8buff = new Uint8Array(imgd.data);
+		//data.ui8buff = ui8buff;
+		
+		return data;
+	}
+	
+	TextFormat.prototype.renderPar = function(s, posY, lineH, ctx, tf, coff, metrics)	// returns number of lines
+	{
+		var words;
+		if(tf._wordWrap) words = s.split(" ");
+		else words = [s];
+		
+		var spacew = ctx.measureText(" ").width;
+		var curlw = 0;			// current line width
+		var maxlw = tf._areaW;	// maximum line width
+		var cl = 0;				// current line
+		
+		var lines = [[]];		// array of lines , line = (arrays of words)
+		var lspace = [];		// free line space
+		
+		for(var i=0; i<words.length; i++)
+		{
+			var word = words[i];
+			var ww = ctx.measureText(word).width;
+			if(curlw + ww <= maxlw || curlw == 0)
+			{
+				lines[cl].push(word);
+				curlw += ww + spacew;
+			}
+			else
+			{
+				lspace.push(maxlw - curlw + spacew);
+				lines.push([]);
+				cl++;
+				curlw = 0;
+				i--;
+			}
+		}
+		lspace.push(maxlw - curlw + spacew);
+		
+		for(var i=0; i<lines.length; i++)
+		{
+			var mline = { x:0,y:0,width:0,height:0, charOffset:coff, words:[] };
+			mline.height = this.size*1.25+this.leading;
+			var line = lines[i];
+			//while(line[line.length-1] == "") {line.pop(); lspace[i] += spacew; }
+			this.maxW = Math.max(this.maxW, maxlw-lspace[i]);
+			
+			var gap, lineY = posY + (lineH+this.leading)*i;
+			curlw = 0, gap = spacew;
+			if(this.align == TextFormatAlign.CENTER ) curlw = lspace[i]*0.5;
+			if(this.align == TextFormatAlign.RIGHT  ) curlw = lspace[i];
+			if(this.align == TextFormatAlign.JUSTIFY) gap = spacew+lspace[i]/(line.length-1);
+			
+			mline.x = curlw;
+			mline.y = lineY;
+			
+			
+			for(var j=0; j<line.length; j++)
+			{
+				var word = line[j];
+				ctx.fillText(word, curlw, lineY);
+				var ww = ctx.measureText(word).width;
+				
+				mline.words.push({x:curlw, y:lineY, width:ww, height:mline.height, charOffset:coff, word:word});
+				
+				if(i < lines.length-1) curlw += ww + gap;	// not last line
+				else {curlw += ww + spacew;}		// last line
+				coff += word.length+1;
+			}
+			
+			mline.width = curlw-mline.x;
+			if(i==lines.length-1) mline.width -= spacew;
+			metrics.push(mline);
+		}
+		return cl+1;
+	}
+	
+	TextFormat.prototype._nhpt = function(x) 
+	{
+		--x;
+		for (var i = 1; i < 32; i <<= 1) x = x | x >> i;
+		return x + 1;
+	}
+	
+	TextFormat._canvas = document.createElement("canvas");
+	TextFormat._ctxext = TextFormat._canvas.getContext("2d");
+	
+		/**
+		 * Set the text format of a text
+		 * @param ntf	new text format
+		 */
+	function TextField()
+	{
+		InteractiveObject.call(this);
+		
+		this._tarea		= document.createElement("textarea");
+		this._tareaAdded = false;
+		this._tarea.setAttribute("style", "font-family:Times New Roman; font-size:12px; z-index:-1; \
+											position:absolute; top:0px; left:0px; opacity:0; pointer-events:none; user-select:none; width:100px; height:100px;");
+		this._tarea.addEventListener("input", this._tfInput.bind(this), false);
+		//this._tarea.addEventListener("mousedown", function(e){e.preventDefault();});
+	
+		
+		this._stage		= null;
+		this._type		= "dynamic"; // "dynamic" or "input"
+		this._selectable= true;
+		this._mdown		= false;
+		this._curPos	= -1;
+		this._select	= null;	// selection
+		this._metrics	= null;		// metrics of rendered text
+		this._wordWrap	= false;	// wrap words 
+		this._textW		= 0;		// width of text
+		this._textH		= 0;		// height of text
+		this._areaW		= 100;		// width of whole TF area
+		this._areaH		= 100;		// height of whole TF area
+		this._text		= "";		// current text
+		this._tForm		= new TextFormat();
+		this._rwidth	= 0;
+		this._rheight	= 0;  
+		this._background = false;
+		this._border	= false;
+		
+		this._texture	= gl.createTexture();	// texture
+		this._tcArray	= new Float32Array([0,0, 0,0, 0,0, 0,0]);
+		this._tcBuffer	= gl.createBuffer();	// texture coordinates buffer
+		Stage._setBF(this._tcBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, this._tcArray, gl.STATIC_DRAW);
+		
+		this._fArray	= new Float32Array([0,0,0, 0,0,0, 0,0,0, 0,0,0]);
+		this._vBuffer	= gl.createBuffer();	// vertices buffer for 4 vertices
+		Stage._setBF(this._vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, this._fArray, gl.STATIC_DRAW);
+		
+		this.addEventListener2(Event.ADDED_TO_STAGE, this._tfATS, this);
+		this.addEventListener2(Event.REMOVED_FROM_STAGE, this._tfRFS, this);
+		this.addEventListener2(MouseEvent.MOUSE_DOWN, this._tfMD, this);
+		
+		this.addEventListener2(KeyboardEvent.KEY_UP, this._tfKU, this);
+		
+		this._brect = new Rectangle();
+	}
+	TextField.prototype = new InteractiveObject();
+	
+	TextField.prototype._getLocRect = function() { return this._brect; }
+	
+	TextField.prototype._loseFocus = function() 
+	{ 
+		if(this._tareaAdded) document.body.removeChild(this._tarea);
+		this._tareaAdded = false;
+		this._curPos = -1; 
+		this._update(); 
+	}
+	
+	TextField.prototype._tfKU = function(e)
+	{
+		//console.log(String.fromCharCode(e.keyCode));
+		this._tfInput(null);
+	}
+	
+	TextField.prototype._tfInput = function(e)
+	{
+		if(this._type != "input") return;
+		this._text = this._tarea.value;
+		this._select = null;
+		this._curPos = this._tarea.selectionStart;
+		this.setSelection(this._tarea.selectionStart, this._tarea.selectionEnd);
+	}
+	
+	TextField.prototype._tfATS = function(e)
+	{
+		this._stage = this.stage;
+	}
+	TextField.prototype._tfRFS = function(e)
+	{
+		this._loseFocus();
+	}
+	
+	TextField.prototype._tfMD = function(e)
+	{
+		//console.log("tfMD");
+		if(!this._selectable) return;
+		if(this._type == "input")
+		{
+			this._tareaAdded = true;
+			document.body.appendChild(this._tarea);
+			this._tarea.value = this._text;
+			this._tarea.focus();
+		}
+		var ind = this.getCharIndexAtPoint(this.mouseX, this.mouseY);
+		this._mdown = true;
+		this._curPos = ind;
+		this.setSelection(ind, ind);
+		this._update();
+		
+		this.stage.addEventListener2(MouseEvent.MOUSE_MOVE, this._tfMM, this);
+		this.stage.addEventListener2(MouseEvent.MOUSE_UP,   this._tfMU, this);
+	}
+	TextField.prototype._tfMM = function(e)
+	{
+		//console.log("tfMM");
+		if(!this._selectable || !this._mdown) return;
+		var ind = this.getCharIndexAtPoint(this.mouseX, this.mouseY);
+		this.setSelection(this._curPos, ind);
+	}
+	TextField.prototype._tfMU = function(e)
+	{
+		//console.log("tfMU");
+		if(!this._selectable) return;
+		//var sel = this._select;
+		//if(sel) if(sel.from != sel.to) this._tarea.setSelectionRange(sel.from, sel.to); 
+		//this.setSelection(this._curPos, ind);
+		this._mdown = false;
+		
+		if(this._type == "input") this._tarea.focus();
+		
+		this._stage.removeEventListener(MouseEvent.MOUSE_MOVE, this._tfMM);
+		this._stage.removeEventListener(MouseEvent.MOUSE_UP,   this._tfMU);
+	}
+	
+	/* public */
+	
+	TextField.prototype.appendText = function(newText) { this._text += newText; this._update(); }
+	
+	TextField.prototype.getCharBoundaries = function(charIndex)
+	{
+		//console.log("      ".split(" "));
+		//if(charIndex>=this._text.length) {var lw =  return new Rectangle(0,0,30,30);}
+		var ctx = TextFormat._ctxext;
+		this._tForm.setContext(ctx);
+		var m = this._metrics;
+		var l = this.getLineIndexOfChar(charIndex);
+		if(m[l].words.length == 0) return new Rectangle(m[l].x, m[l].y, m[l].width, m[l].height);
+		var w = 0;  while(w+1<m[l].words.length && m[l].words[w+1].charOffset<=charIndex) w++;
+		var word = m[l].words[w];
+		var pref = word.word.substring(0,charIndex-word.charOffset);
+		var rect = new Rectangle(word.x + ctx.measureText(pref).width, word.y, 0, word.height);
+		rect.width = ctx.measureText(this._text.charAt(charIndex)).width;
+		var nw = m[l].words[w+1];
+		if(nw && nw.charOffset==charIndex+1) rect.width = nw.x-rect.x;
+		return rect;
+	}
+	
+	TextField.prototype.getCharIndexAtPoint = function(x, y)
+	{
+		if(this._text.length == 0) return 0;
+		var ctx = TextFormat._ctxext;
+		this._tForm.setContext(ctx);
+		var m = this._metrics;
+		var l = this.getLineIndexAtPoint(x,y);
+		x = Math.max(m[l].x, Math.min(m[l].x+m[l].width, x));
+		var w = 0;  while(w+1<m[l].words.length && m[l].words[w+1].x<=x) w++;
+		var word = m[l].words[w];
+		var ci = word.charOffset;
+		var cx = word.x;
+		while(true)
+		{
+			var cw = ctx.measureText(this._text.charAt(ci)).width;
+			if(cx+cw*0.5<x && cw!=0) { cx+=cw; ci++; }
+			else break;
+		}
+		return ci;
+	}
+	
+	TextField.prototype.getLineIndexAtPoint = function(x, y)
+	{
+		var m = this._metrics;
+		var l = 0;
+		while(l+1<m.length && m[l+1].y<=y) l++;
+		return l;
+	}
+	TextField.prototype.getLineIndexOfChar = function(charIndex)
+	{
+		var m = this._metrics;
+		var l = 0;
+		while(l+1<m.length && m[l+1].charOffset<=charIndex) l++;
+		return l;
+	}
+	
+	TextField.prototype.getTextFormat = function(ntf)
+	{
+		return this._tForm.clone();
+	}
+	
+	TextField.prototype.setTextFormat = function(ntf)
+	{
+		this._tForm.set(ntf);
+		this._tarea.style.fontFamily = ntf.font;
+		this._tarea.style.fontSize = ntf.size+"px";
+		this._tarea.style.textAlign = ntf.align;
+		this._update();
+	}
+	
+	TextField.prototype.setSelection = function(begin, end)
+	{
+		var a = Math.min(begin,end), b = Math.max(begin,end), s = this._select;
+		if(s==null || s.from != a || s.to != b)
+		{
+			this._select = { from:a, to:b };
+			//console.log(a, b, this._tarea.setSelectionRange);
+		
+			//this._tarea.setSelectionRange(a,b);
+			this._tarea.selectionStart = a;  this._tarea.selectionEnd = b;
+			this._update();
+		}
+	}
+	
+	TextField.prototype._update = function()
+	{
+		var w = this._brect.width  = this._areaW;
+		var h = this._brect.height = this._areaH;
+		
+		if(w == 0 || h == 0) return;
+		var data = this._tForm.getImageData(this._text, this);
+		this._textW = data.tw;
+		this._textH = data.th;
+		
+		if(data.rw != this._rwidth || data.rh != this._rheight) 
+		{
+			gl.deleteTexture(this._texture);
+			this._texture = gl.createTexture();
+		}
+		Stage._setTEX(this._texture);
+		
+		//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data.image);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
+						data.rw, data.rh, 0, gl.RGBA, 
+						gl.UNSIGNED_BYTE, data.ui8buff);	
+		//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data.imageData);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);  
+		
+		gl.generateMipmap(gl.TEXTURE_2D); 
+		
+		this._rwidth = data.rw;
+		this._rheight = data.rh;
+		
+		var sx = w / data.rw;
+		var sy = h / data.rh;
+		
+		var ta = this._tcArray;
+		ta[2] = ta[6] = sx;
+		ta[5] = ta[7] = sy;
+		
+		Stage._setBF(this._tcBuffer);
+		gl.vertexAttribPointer(Stage._main._sprg.tca, 2, gl.FLOAT, false, 0, 0);
+		gl.bufferSubData(gl.ARRAY_BUFFER, 0, ta);
+		
+		var fa = this._fArray;
+		fa[3] = fa[9] = w;
+		fa[7] = fa[10] = h;
+		Stage._setBF(this._vBuffer);
+		gl.vertexAttribPointer(Stage._main._sprg.vpa, 3, gl.FLOAT, false, 0, 0);
+		gl.bufferSubData(gl.ARRAY_BUFFER, 0, fa);
+	}
+
+	TextField.prototype._render = function(st)
+	{
+		if(this._areaW == 0 || this._areaH == 0) return;
+		
+		gl.uniformMatrix4fv(st._sprg.tMatUniform, false, st._mstack.top());
+		st._cmstack.update();
+		
+		Stage._setVC(this._vBuffer);
+		Stage._setTC(this._tcBuffer);
+		Stage._setUT(1);
+		Stage._setTEX(this._texture);
+		Stage._setEBF(st._unitIBuffer);
+		
+        gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	}
+	
+	this.tp = TextField.prototype;
+	tp.ds = tp.__defineSetter__;
+	tp.dg = tp.__defineGetter__;
+	
+	tp.dg("textWidth" , function(){return this._textW;});
+	tp.dg("textHeight", function(){return this._textH;});
+	
+	tp.ds("wordWrap", function(x){this._wordWrap = x; this._update();});
+	tp.dg("wordWrap", function( ){return this._wordWrap;});
+	
+	tp.ds("width" , function(x){this._areaW = Math.max(0,x); this._tarea.style.width = this._areaW+"px"; this._update();});
+	tp.dg("width" , function( ){return this._areaW;});
+	
+	tp.ds("height", function(x){this._areaH = Math.max(0,x); this._tarea.style.height = this._areaH+"px"; this._update();});
+	tp.dg("height", function( ){return this._areaH;});
+	
+	tp.ds("text", function(x){this._text = x+""; this._update();});
+	tp.dg("text", function( ){return this._text;});
+	
+	tp.ds("selectable", function(x){this._selectable = x; this._update();});
+	tp.dg("selectable", function( ){return this._selectable;});
+	
+	tp.ds("type", function(x){this._type = x; this._update();});
+	tp.dg("type", function( ){return this._type;});
+	
+	tp.ds("background", function(x){this._background = x; this._update();});
+	tp.dg("background", function( ){return this._background;});
+	
+	tp.ds("border", function(x){this._border = x; this._update();});
+	tp.dg("border", function( ){return this._border;});
+	
+	delete(tp.ds);
+	delete(tp.dg);
+	delete(this.tp);
+	
+
