@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=1.2.0
+VERSION=1.2.1
 
 cat src/geom/Point.js \
     src/geom/Rectangle.js \
